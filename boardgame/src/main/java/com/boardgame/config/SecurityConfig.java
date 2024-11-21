@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.authority.AuthorityUtils;
-
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -47,45 +46,32 @@ public class SecurityConfig {
         };
     }
 
-    // @Bean
-    // public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    //     http.csrf().disable() // Disable CSRF for simplicity (adjust for production)
-    //         .authorizeHttpRequests()
-    //         .requestMatchers("/admin/**").hasRole("ADMIN")  // Only ADMIN role can access /admin
-    //         .requestMatchers("/play/**").hasAnyRole("PLAYER", "ADMIN") // PLAYER and ADMIN can access /play
-    //         .anyRequest().authenticated()  // All other endpoints require authentication
-    //         .and()
-    //         .formLogin() // Enable default login page
-    //         .permitAll()
-    //         .and()
-    //         .logout() // Enable logout functionality
-    //         .permitAll();
-    //     return http.build();
-    // }
     @Bean
     public SecurityFilterChain configure(HttpSecurity http) throws Exception {
-		
-		
-		http
-		.authorizeHttpRequests(authorize -> authorize
-				.requestMatchers(antMatcher("/css/**")).permitAll()
-				.requestMatchers(antMatcher("/signup")).permitAll()
-				.requestMatchers(antMatcher("/saveuser")).permitAll()
-				.anyRequest().authenticated()
-		)
-		.headers(headers -> headers
-				.frameOptions(frameoptions -> 
-				frameoptions.disable() //for h2 console			
-			    )
-		)
-		.formLogin(formlogin -> formlogin
-				.loginPage("/login")
-				.defaultSuccessUrl("/home", true)
-				.permitAll()
-		)
-		.logout(logout -> logout
-				.permitAll()
-		);
-		return http.build();
-	}
+
+        http
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers(antMatcher("/css/**")).permitAll()  // Allow CSS files
+                .requestMatchers(antMatcher("/signup")).permitAll()  // Allow signup endpoint
+                .requestMatchers(antMatcher("/saveuser")).permitAll()  // Allow saveuser endpoint
+                .requestMatchers(antMatcher("/login")).permitAll()  // Allow login page
+                .requestMatchers(antMatcher("/home")).authenticated()  // Protect home page, require login
+                .requestMatchers(antMatcher("/admin/**")).hasRole("ADMIN")  // Protect admin routes, require admin role
+                .requestMatchers(antMatcher("/play/**")).hasAnyRole("PLAYER", "ADMIN")  // Protect play routes, require player or admin role
+                .anyRequest().authenticated()  // Protect all other routes, require login
+            )
+            .headers(headers -> headers
+                .frameOptions(frameoptions -> frameoptions.disable())  // Disable frame options for H2 console
+            )
+            .formLogin(formlogin -> formlogin
+                .loginPage("/login")  // Specify the custom login page
+                .defaultSuccessUrl("/home", true)  // Redirect to home after successful login
+                .permitAll()  // Allow all users to access the login page
+            )
+            .logout(logout -> logout
+                .permitAll()  // Allow all users to log out
+            );
+
+        return http.build();
+    }
 }
