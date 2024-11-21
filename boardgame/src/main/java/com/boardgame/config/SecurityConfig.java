@@ -80,7 +80,7 @@ public class SecurityConfig {
 		)
 		.formLogin(formlogin -> formlogin
 				.loginPage("/login")
-				.defaultSuccessUrl("/booklist", true)
+				.defaultSuccessUrl("/home", true)
 				.permitAll()
 		)
 		.logout(logout -> logout
