@@ -22,46 +22,56 @@ public class GameSession {
 
     @OneToMany(cascade = CascadeType.ALL)
     private List<Player> players;
-
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getGameName() {
-        return gameName;
-    }
-
-    public void setGameName(String gameName) {
-        this.gameName = gameName;
-    }
-
-    public LocalDateTime getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public LocalDateTime getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
-    }
-
-    public List<Player> getPlayers() {
-        return players;
-    }
-
-    public void setPlayers(List<Player> players) {
-        this.players = players;
-    }
+    
+        private boolean ended;
+    
+        // Getters and Setters
+        public Long getId() {
+            return id;
+        }
+    
+        public void setId(Long id) {
+            this.id = id;
+        }
+    
+        public String getGameName() {
+            return gameName;
+        }
+    
+        public void setGameName(String gameName) {
+            this.gameName = gameName;
+        }
+    
+        public LocalDateTime getStartTime() {
+            return startTime;
+        }
+    
+        public void setStartTime(LocalDateTime startTime) {
+            this.startTime = startTime;
+        }
+    
+        public LocalDateTime getEndTime() {
+            return endTime;
+        }
+    
+        public void setEndTime(LocalDateTime endTime) {
+            this.endTime = endTime;
+        }
+    
+        public List<Player> getPlayers() {
+            return players;
+        }
+    
+        public void setPlayers(List<Player> players) {
+            this.players = players;
+        }
+    
+        public boolean isEnded() {
+            return ended;
+        }
+    
+        public void setEnded(boolean ended) {
+            this.ended = ended;
+        }
 }
 

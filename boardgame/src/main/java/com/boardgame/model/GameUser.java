@@ -1,14 +1,13 @@
 package com.boardgame.model;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
-public class User {
+public class GameUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -16,8 +15,17 @@ public class User {
     private String username;
     private String password; // Password should be securely hashed (e.g., BCrypt)
     
-    @Enumerated(EnumType.STRING)
-    private Role role;
+    
+    private String role;
+
+    public GameUser(String username,String password,String role){
+        super();
+        this.username=username;
+        this.password=password;
+        this.role=role;
+        
+       
+    }
 
     // Getters and Setters
     public Long getId() {
@@ -44,11 +52,11 @@ public class User {
         this.password = password;
     }
 
-    public Role getRole() {
+    public String getRole() {
         return role;
     }
 
-    public void setRole(Role role) {
+    public void setRole(String role) {
         this.role = role;
     }
 }

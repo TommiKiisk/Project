@@ -1,7 +1,5 @@
 package com.boardgame.service;
 
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +14,5 @@ public class GameConfigService {
     public GameConfig saveGameConfig(GameConfig config) {
         return gameConfigRepository.save(config);
     }
-
-    public Optional<GameConfig> getGameConfig(Long id) {
-        return gameConfigRepository.findById(id);
-    }
 }
+

@@ -9,9 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.boardgame.model.GameConfig;
 import com.boardgame.model.GameSession;
@@ -24,10 +22,10 @@ import org.springframework.ui.Model;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.stereotype.Controller;
 
 
-@RestController
-@RequestMapping("/api/games")
+@Controller
 public class GameController {
     @Autowired
     private GameConfigService gameConfigService;
@@ -37,10 +35,12 @@ public class GameController {
 
     
 
+    
     @GetMapping("/login")
-    public String login() {
-        return "login";
+    public String loginPage() {
+        return "login"; // Ensure login.html exists in the templates directory
     }
+
 
     @GetMapping("/home")
     public String home(Model model, Authentication authentication) {
@@ -57,7 +57,7 @@ public class GameController {
         return "admin";
     }
 
-    @GetMapping("/play")
+    @GetMapping("/game")
     public String gamePage(Model model, Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         model.addAttribute("playerName", user.getUsername());
