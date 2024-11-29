@@ -1,19 +1,26 @@
 package com.boardgame.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Entity
 public class GameUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false, updatable = false)
     private Long id;
 
+    // Username with unique constraint
+    @Column(name = "username", nullable = false, unique = true)
     private String username;
-    private String password; // Password should be securely hashed (e.g., BCrypt)
+
+    @Column(name = "password", nullable = false)
+    private String passwordHash;
+
+    @Column(name = "role", nullable = false)
     private String role;
 
     // Default no-arg constructor for JPA
@@ -21,23 +28,13 @@ public class GameUser {
     }
 
     // Constructor with arguments for easy initialization
-    public GameUser(String username, String password, String role) {
+    public GameUser(String username, String passwordHash, String role) {
         this.username = username;
-        this.password = hashPassword(password); // Hashing password before storing
+        this.passwordHash = passwordHash;
         this.role = role;
     }
 
-    // Hashing the password using BCrypt
-    private String hashPassword(String password) {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        return encoder.encode(password); // Hashes and returns the password
-    }
 
-    // Method to check if the provided password matches the stored (hashed) password
-    public boolean checkPassword(String rawPassword) {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        return encoder.matches(rawPassword, this.password); // Compares raw password with hashed password
-    }
 
     // Getters and Setters
     public Long getId() {
@@ -54,14 +51,6 @@ public class GameUser {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = hashPassword(password); // Always hash when setting a new password
     }
 
     public String getRole() {
@@ -81,4 +70,12 @@ public class GameUser {
                 ", role='" + role + '\'' +
                 '}';
     }
+
+	public String getPasswordHash() {
+		return passwordHash;
+	}
+
+	public void setPasswordHash(String passwordHash) {
+		this.passwordHash = passwordHash;
+	}
 }

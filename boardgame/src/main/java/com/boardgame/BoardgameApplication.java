@@ -4,8 +4,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-
 import com.boardgame.model.GameUser;
 import com.boardgame.repository.GameUserRepository;
 
@@ -19,8 +17,6 @@ public class BoardgameApplication {
     @Bean
     public CommandLineRunner createDefaultUsers(GameUserRepository gameUserRepository) {
         return (args) -> {
-            BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
             // Skip creation if there are already users in the database
             if (gameUserRepository.count() > 0) {
                 System.out.println("Users already exist in the database. Skipping default user creation.");
@@ -29,15 +25,15 @@ public class BoardgameApplication {
 
             // Create user 'user' if it doesn't exist
             if (!gameUserRepository.existsByUsername("user")) {
-                String encodedPassword1 = passwordEncoder.encode("user");  // Encode plain password
-                GameUser user1 = new GameUser("user", encodedPassword1, "USER");
-                gameUserRepository.save(user1);
+				GameUser user1 = new GameUser("user", "$2a$06$3jYRJrg0ghaaypjZ/.g4SethoeA51ph3UD4kZi9oPkeMTpjKU5uo6", "USER");
+				gameUserRepository.save(user1);
+				
             }
 
             // Create user 'admin' if it doesn't exist
             if (!gameUserRepository.existsByUsername("admin")) {
-                String encodedPassword2 = passwordEncoder.encode("admin");  // Encode plain password
-                GameUser user2 = new GameUser("admin", encodedPassword2, "ADMIN");
+				GameUser user2 = new GameUser("admin", "$2a$10$0MMwY.IQqpsVc1jC8u7IJ.2rT8b0Cd3b3sfIBGV2zfgnPGtT4r0.C", "ADMIN");
+
                 gameUserRepository.save(user2);
             }
         };

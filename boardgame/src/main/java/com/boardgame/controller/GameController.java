@@ -1,13 +1,15 @@
 package com.boardgame.controller;
 
+import java.io.IOException;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired; // For field-based DI (if using @Autowired)
 import org.springframework.http.ResponseEntity;              // For REST API responses
-import org.springframework.web.bind.annotation.*;           // For request mapping annotations
 import org.springframework.ui.Model;                        // To pass data to the view templates
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;     // To access authenticated user details
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;   // Represents the authenticated user
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;            // To define this class as a Spring MVC controller
 
 import com.boardgame.model.GameConfig;                       // Your domain model for GameConfig
@@ -17,6 +19,9 @@ import com.boardgame.model.Player;
 import com.boardgame.service.GameConfigService;
 import com.boardgame.service.GameSessionService;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,6 +46,17 @@ public class GameController {
         return "login"; // Ensure login.html exists in the templates directory
     }
 
+    @GetMapping("/logout")
+    public String logout(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Invalidate the session and clear the authentication
+        request.getSession().invalidate();
+        SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
+        logoutHandler.logout(request, response, SecurityContextHolder.getContext().getAuthentication());
+
+        // Redirect to the login page after logout
+        return "redirect:/login";
+    }
+
     @GetMapping("/home")
     public String home(Model model, Authentication authentication) {
         User user = (User) authentication.getPrincipal();
@@ -50,11 +66,13 @@ public class GameController {
     }
 
     @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
     public String adminDashboard(Model model, Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         model.addAttribute("username", user.getUsername());
         return "admin";
     }
+
 
     @GetMapping("/game")
     public String gamePage(Model model, Authentication authentication) {

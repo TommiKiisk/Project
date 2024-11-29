@@ -44,7 +44,7 @@ public class GameUserRepositoryTest {
         assertNotNull(user);
 
         // Validate that the password matches the stored hash
-        boolean passwordMatches = passwordEncoder.matches(plainPasswordUser, user.getPassword());
+        boolean passwordMatches = passwordEncoder.matches(plainPasswordUser, user.getPasswordHash());
         
         // Assert that the password matches
         assertTrue(passwordMatches, "Password for 'user' does not match the stored hash.");
@@ -60,10 +60,10 @@ public class GameUserRepositoryTest {
         assertNotNull(admin);
 
         // Print the stored password hash for debugging
-        System.out.println("Stored password hash: " + admin.getPassword());
+        System.out.println("Stored password hash: " + admin.getPasswordHash());
 
         // Validate that the password matches the stored hash
-        boolean passwordMatches = passwordEncoder.matches(plainPasswordAdmin, admin.getPassword());
+        boolean passwordMatches = passwordEncoder.matches(plainPasswordAdmin, admin.getPasswordHash());
 
         // Print the result of the password match for debugging
         System.out.println("Password matches: " + passwordMatches);
