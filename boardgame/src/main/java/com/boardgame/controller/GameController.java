@@ -5,18 +5,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.http.ResponseEntity;              // For REST API responses
-import org.springframework.ui.Model;                        // To pass data to the view templates
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;     // To access authenticated user details
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;   // Represents the authenticated user
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.stereotype.Controller;            // To define this class as a Spring MVC controller
+import org.springframework.stereotype.Controller;
 
 import com.boardgame.dto.GameSetupRequest;
-import com.boardgame.model.GameConfig;                       // Your domain model for GameConfig
-import com.boardgame.model.GameSession;                      // Your domain model for GameSession
+import com.boardgame.model.GameConfig;
+import com.boardgame.model.GameSession;
 import com.boardgame.model.Player;
 
 import com.boardgame.service.GameConfigService;
@@ -26,13 +26,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 public class GameController {
@@ -52,12 +46,9 @@ public class GameController {
 
     @GetMapping("/logout")
     public String logout(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Invalidate the session and clear the authentication
         request.getSession().invalidate();
         SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
         logoutHandler.logout(request, response, SecurityContextHolder.getContext().getAuthentication());
-
-        // Redirect to the login page after logout
         return "redirect:/login";
     }
 
@@ -77,71 +68,90 @@ public class GameController {
         return "admin";
     }
 
-
-
     @GetMapping("/setup")
     public String showGameSetupPage(Model model) {
         model.addAttribute("gameSetupRequest", new GameSetupRequest());
-        return "setup";  // This will return setup.html (Thymeleaf template)
+        return "setup"; // The setup page will display the form
     }
 
     @PostMapping("/setup")
     public String handleGameSetup(@ModelAttribute GameSetupRequest gameSetupRequest, Model model) {
         try {
-            // Assuming 'players' is already a List of strings, so no need for splitting.
             List<String> players = gameSetupRequest.getPlayers();
-
-            // Initialize the list of rules as a Map to store name -> points
             Map<String, Integer> parsedRules = new HashMap<>();
 
-            // Parse the rules from the list of strings (e.g., "town:3, city:5")
+            // Process the rules
             for (String ruleString : gameSetupRequest.getRules()) {
-                // Split the rule string by colon (:) to separate rule name and points
                 String[] ruleParts = ruleString.split(":");
-
+                
+                // Check if rule format is valid
                 if (ruleParts.length == 2) {
-                    String ruleName = ruleParts[0].trim();  // Rule name (e.g., "town")
+                    String ruleName = ruleParts[0].trim();
                     try {
-                        int rulePoints = Integer.parseInt(ruleParts[1].trim());  // Rule points (e.g., 3)
-                        parsedRules.put(ruleName, rulePoints); // Store the parsed rule in the map
+                        int rulePoints = Integer.parseInt(ruleParts[1].trim()); // Parse points as an integer
+                        parsedRules.put(ruleName, rulePoints); // Add rule to map
                     } catch (NumberFormatException e) {
-                        // Handle invalid points format (non-integer value)
                         model.addAttribute("error", "Invalid points format for rule: " + ruleString);
-                        return "setup"; // Return to the setup page with an error message
+                        return "setup"; // Return to setup page with error message
                     }
                 } else {
-                    // Handle invalid rule input (optional)
                     model.addAttribute("error", "Invalid rule format: " + ruleString);
-                    return "setup";  // Return to the setup page with an error message
+                    return "setup"; // Return to setup page with error message
                 }
             }
 
-            // Set the players and parsed rules to the gameSetupRequest
-            gameSetupRequest.setPlayers(players);
-            // We could set the parsed rules back into the gameSetupRequest if needed,
-            // but we're using a Map, so we don't need to convert it to a List.
-
-            // Add the gameSetupRequest to the model to be displayed on the confirmation page
+            // Add the parsed rules and game setup request to the model for the next page
             model.addAttribute("gameSetupRequest", gameSetupRequest);
-            model.addAttribute("parsedRules", parsedRules); // Add parsed rules to model
+            model.addAttribute("parsedRules", parsedRules);
 
-            // Return the success page
-            return "gameSuccess";  // Return the view after successful processing
+            // Redirect to a success page after setup
+            return "gameSuccess"; // This page will show the game setup results
+
         } catch (Exception e) {
-            // Log and handle any errors that may occur during processing
             e.printStackTrace();
             model.addAttribute("error", "There was an error processing the setup.");
-            return "setup";  // Return to the setup page with error message
+            return "setup"; // Return to setup page with error message
         }
     }
 
+    @GetMapping("/play")
+    public String showGameSessionPage(Model model) {
+        // Assuming you have a method to get the current game session
+        GameSession gameSession = gameSessionService.getCurrentGameSession();
     
+        if (gameSession == null) {
+            model.addAttribute("error", "Game session not found.");
+            return "error";  // Or wherever you want to redirect if no session exists
+        }
     
-    @GetMapping("/game")
-    public String game() {
-        return "game";
+        model.addAttribute("gameSession", gameSession);
+        model.addAttribute("players", gameSession.getPlayers());  // Add players as well if needed
+        return "play";  // This will render play.html
     }
-    
+
+    @PostMapping("/game/update-scores")
+    public String updateScores(@RequestParam Map<String, String> scores, Model model) {
+        try {
+            for (Map.Entry<String, String> entry : scores.entrySet()) {
+                String playerName = entry.getKey();
+                int pointsToAdd = Integer.parseInt(entry.getValue());
+
+                Player player = gameSessionService.findPlayerByName(playerName);
+                if (player != null) {
+                    int updatedPoints = player.getPoints() + pointsToAdd;
+                    gameSessionService.updatePlayerPoints(player.getGameSession().getId(), player.getId(), updatedPoints);
+                }
+            }
+
+            List<Player> players = gameSessionService.getAllPlayers();
+            model.addAttribute("players", players);
+        } catch (Exception e) {
+            model.addAttribute("error", "Failed to update scores: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return "play";
+    }
 
     @PostMapping("/game-configs")
     public ResponseEntity<GameConfig> createGameConfig(@RequestBody GameConfig config) {
@@ -153,11 +163,44 @@ public class GameController {
         return ResponseEntity.ok(gameConfigService.getAllGameConfigs());
     }
 
-    // Game Session Management
     @PostMapping("/game-sessions")
     public ResponseEntity<GameSession> createGameSession(@RequestParam String gameName, @RequestBody List<Player> players) {
         return ResponseEntity.ok(gameSessionService.createGameSession(gameName, players));
     }
+
+    @PostMapping("/game-sessions/{sessionId}/players/{playerId}/update-score")
+    public String updatePlayerScore(
+            @PathVariable Long sessionId,
+            @PathVariable Long playerId,
+            @RequestParam int score,
+            Model model) {
+        try {
+            // Update the player's score
+            gameSessionService.updatePlayerPoints(sessionId, playerId, score);
+
+            // Reload the game session players
+            return "redirect:/game-sessions/" + sessionId + "/play";
+        } catch (Exception e) {
+            model.addAttribute("error", "Failed to update score: " + e.getMessage());
+            return "play";
+        }
+    }
+    @GetMapping("/game-sessions/{sessionId}/play")
+    public String showGameSessionPlayers(@PathVariable Long sessionId, Model model) {
+        try {
+            GameSession session = gameSessionService.getGameSessionById(sessionId);
+            if (session == null) {
+                throw new IllegalArgumentException("Game session not found");
+            }
+            model.addAttribute("gameSession", session);
+            model.addAttribute("players", session.getPlayers());
+        } catch (Exception e) {
+            model.addAttribute("error", "Failed to load the game session: " + e.getMessage());
+            return "error"; // Point to a generic error page
+        }
+        return "play";
+    }
+
 
     @PutMapping("/game-sessions/{sessionId}/players/{playerId}/points")
     public ResponseEntity<?> updatePlayerPoints(
@@ -177,7 +220,6 @@ public class GameController {
         return ResponseEntity.ok(gameSessionService.endGameSession(sessionId));
     }
 
-    // Player Management
     @PostMapping("/players")
     public ResponseEntity<Player> createPlayer(@RequestBody Player player) {
         return ResponseEntity.ok(gameSessionService.savePlayer(player));

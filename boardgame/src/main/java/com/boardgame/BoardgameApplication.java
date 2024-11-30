@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import com.boardgame.model.GameUser;
 import com.boardgame.repository.GameUserRepository;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.boardgame")
 public class BoardgameApplication {
 
     public static void main(String[] args) {

@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Game Setup</title>
     <script>
-        // Function to add a player row
         function addPlayer() {
             const playerList = document.getElementById("playerList");
             const newPlayer = document.createElement("div");
@@ -16,12 +15,10 @@
             playerList.appendChild(newPlayer);
         }
 
-        // Function to remove a player row
         function removePlayer(button) {
             button.parentElement.remove();
         }
 
-        // Function to add a rule row
         function addRule() {
             const ruleList = document.getElementById("ruleList");
             const newRule = document.createElement("div");
@@ -34,7 +31,6 @@
             ruleList.appendChild(newRule);
         }
 
-        // Function to remove a rule row
         function removeRule(button) {
             button.parentElement.remove();
         }
@@ -45,6 +41,9 @@
 <h2>Game Setup</h2>
 
 <form th:action="@{/setup}" method="post" th:object="${gameSetupRequest}">
+    <label for="gameName">Game Name:</label>
+    <input type="text" id="gameName" name="gameName" th:value="${gameSetupRequest.gameName}" required /><br><br>
+
     <h3>Players</h3>
     <div id="playerList">
         <div class="playerRow">
@@ -68,10 +67,9 @@
     <button type="submit">Submit Game Setup</button>
 </form>
 
-<!-- Display Play button after successful submission -->
 <div th:if="${gameSetupRequest != null}">
     <br>
-    <a href="/game" class="playButton">Start Game</a>
+    <a href="/play" class="playButton">Start Game</a>
 </div>
 
 </body>

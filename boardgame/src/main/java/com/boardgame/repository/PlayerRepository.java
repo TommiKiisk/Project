@@ -1,12 +1,9 @@
 package com.boardgame.repository;
 
-import org.springframework.data.repository.CrudRepository;
-
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import com.boardgame.model.Player;
 
-import java.util.List;
-
-public interface PlayerRepository extends CrudRepository<Player, Long> {
-    // Custom query to find a player by name within a specific session if needed
-    List<Player> findByName(String name);
+@Repository
+public interface PlayerRepository extends JpaRepository<Player, Long> {
 }

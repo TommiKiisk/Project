@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Game Session</title>
+</head>
+<body>
+    <h1>Game Session: <span th:text="${gameSession.gameName}"></span></h1>
+
+    <!-- Display error message if exists -->
+    <div th:if="${error}">
+        <p style="color: red;" th:text="${error}"></p>
+    </div>
+
+    <h2>Players</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Player Name</th>
+                <th>Score</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Iterate over the players and display their details -->
+            <tr th:each="player : ${players}">
+                <td th:text="${player.name}"></td>
+                <td th:text="${player.points}"></td>
+                <td>
+                    <!-- Form to update the player's score -->
+                    <form th:action="@{/game-sessions/{sessionId}/players/{playerId}/update-score(sessionId=${gameSession.id}, playerId=${player.id})}" method="post">
+                        <input type="number" name="score" placeholder="New score" required>
+                        <button type="submit">Update Score</button>
+                    </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Game Session Actions</h2>
+    <!-- Form to end the game session -->
+    <form th:action="@{/game-sessions/{sessionId}/end(sessionId=${gameSession.id})}" method="post">
+        <button type="submit">End Game Session</button>
+    </form>
+</body>
+</html>

@@ -1,6 +1,8 @@
 package com.boardgame.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,7 +19,7 @@ public class GameSessionService {
     private GameSessionRepository gameSessionRepository;
 
     @Autowired
-    private PlayerRepository playerRepository; // Added PlayerRepository for player operations
+    private PlayerRepository playerRepository;
 
     /**
      * Creates a new game session with the provided game name and players.
@@ -75,7 +77,7 @@ public class GameSessionService {
      * Retrieves all players from the database.
      */
     public List<Player> getAllPlayers() {
-        return (List<Player>) playerRepository.findAll();
+        return playerRepository.findAll();
     }
 
     /**
@@ -84,5 +86,33 @@ public class GameSessionService {
     public Player getPlayerById(Long playerId) {
         return playerRepository.findById(playerId)
                 .orElseThrow(() -> new RuntimeException("Player not found with ID: " + playerId));
+    }
+
+    /**
+     * Finds a player by their name (method implementation can be added later).
+     */
+    public Player findPlayerByName(String playerName) {
+        // Replace with actual implementation if necessary
+        throw new UnsupportedOperationException("Unimplemented method 'findPlayerByName'");
+    }
+
+    public GameSession getGameSessionById(Long sessionId) {
+        return gameSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("GameSession with ID " + sessionId + " not found"));
+    }
+
+    public GameSession getCurrentGameSession() {
+        // Fetch the most recent active game session
+        Optional<GameSession> optionalGameSession = gameSessionRepository.findFirstByActiveTrueOrderByStartTimeDesc();
+
+        if (optionalGameSession.isPresent()) {
+            return optionalGameSession.get();  // Return the found game session
+        } else {
+            // Handle the case where no active game session exists
+            GameSession newGameSession = new GameSession();
+            newGameSession.setStartTime(LocalDateTime.now());  // Set a start time if creating a new session
+            gameSessionRepository.save(newGameSession);
+            return newGameSession;
+        }
     }
 }
