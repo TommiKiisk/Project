@@ -14,5 +14,9 @@ public class GameConfigService {
     public GameConfig saveGameConfig(GameConfig config) {
         return gameConfigRepository.save(config);
     }
+
+    public Object getAllGameConfigs() {
+        return gameConfigRepository.findAll();
+    }
 }
 
