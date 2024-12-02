@@ -70,17 +70,19 @@
 </form>
 
 <h3>Existing Game Sessions</h3>
-<form th:action="@{/play}" method="get">
+<form th:action="@{/game-sessions/play}" method="get">
     <label for="gameSessionSelect">Choose an Existing Game Session:</label>
     <select id="gameSessionSelect" name="gameSessionId" required>
         <option value="">--Select a Game Session--</option>
-        <!-- Ensure gameSessions is passed correctly and not null -->
         <th:block th:each="gameSession : ${gameSessions}">
             <option th:value="${gameSession.id}" th:text="${gameSession.gameName}"></option>
         </th:block>
     </select>
     <button type="submit">Start Game</button>
 </form>
+
+
+
 
 </body>
 </html>

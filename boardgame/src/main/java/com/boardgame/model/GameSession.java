@@ -1,13 +1,6 @@
 package com.boardgame.model;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,12 +16,13 @@ public class GameSession {
 
     private LocalDateTime startTime;
 
-    private boolean active; // Add this field for the active status of the game session
+    private boolean active; // Active status of the game session
 
     @OneToMany(mappedBy = "gameSession", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Player> players = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "game_session_id") // Ensures the foreign key is correctly mapped
     private List<Rule> rules = new ArrayList<>();
 
     private boolean ended;
@@ -74,6 +68,14 @@ public class GameSession {
         this.players = players;
     }
 
+    public List<Rule> getRules() {
+        return rules;
+    }
+
+    public void setRules(List<Rule> rules) {
+        this.rules = rules;
+    }
+
     public boolean isEnded() {
         return ended;
     }
@@ -82,16 +84,36 @@ public class GameSession {
         this.ended = ended;
     }
 
+    // Utility method to add a player
     public void addPlayer(Player player) {
         if (player != null) {
             this.players.add(player);
+            player.setGameSession(this); // Ensure bidirectional consistency
         }
     }
 
-    // Method to add a rule to the game session
+    // Utility method to add a rule to the game session
     public void addRule(Rule rule) {
         if (rule != null) {
             this.rules.add(rule);
         }
+    }
+
+    // Utility method to remove a rule
+    public void removeRule(Rule rule) {
+        if (rule != null) {
+            this.rules.remove(rule);
+        }
+    }
+
+    public Player getPlayerById(Long id2) {
+        // Iterate through the players list and find the player by id
+        for (Player player : players) {
+            if (player.getId().equals(id2)) {
+                return player;
+            }
+        }
+        // Return null if no player with the given id is found
+        return null;
     }
 }

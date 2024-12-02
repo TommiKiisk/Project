@@ -15,22 +15,24 @@
     <!-- Form to update all players' scores -->
     <form th:if="${gameSession != null}" th:action="@{/game-sessions/{sessionId}/update-scores(sessionId=${gameSession.id})}" method="post">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        
         <table>
             <thead>
                 <tr>
-                    <th>Game Name</th>
-                    <th>Start Time</th>
-                    <th>Players</th>
+                    <th>Player Name</th>
+                    <th>Current Score</th>
+                    <th>New Score</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td th:text="${gameSession.gameName}"></td>
-                    <td th:text="${#temporals.format(gameSession.startTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                <!-- Iterate over players to create input fields for scores -->
+                <tr th:each="player, iterStat : ${gameSession.players}">
+                    <td th:text="${player.name}"></td>
+                    <td th:text="${player.score}"></td>
                     <td>
-                        <ul>
-                            <li th:each="player : ${gameSession.players}" th:text="${player.name + ' (' + player.score + ')'}"></li>
-                        </ul>
+                        <!-- Input for updating player's score -->
+                        <input type="number" th:name="players[__${iterStat.index}__].id" th:value="${player.id}" hidden />
+                        <input type="number" th:name="players[__${iterStat.index}__].score" placeholder="Enter new score" required />
                     </td>
                 </tr>
             </tbody>

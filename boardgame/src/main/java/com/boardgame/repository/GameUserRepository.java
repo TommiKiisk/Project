@@ -5,7 +5,8 @@ import com.boardgame.model.GameUser;
 
 public interface GameUserRepository extends JpaRepository<GameUser, Long> {
 
-    GameUser findByUsername(String username);
+    GameUser findByUsername(String username);  // Find a user by their username
 
-    boolean existsByUsername(String username);
+    boolean existsByUsername(String username);  // Check if a user exists by username
+
 }

@@ -2,36 +2,54 @@ package com.boardgame.controller;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.ui.Model;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 
 import com.boardgame.dto.GameSetupRequest;
 import com.boardgame.model.GameSession;
+import com.boardgame.model.GameUser;
 import com.boardgame.model.Player;
 import com.boardgame.model.Rule;
+import com.boardgame.repository.GameSessionRepository;
 import com.boardgame.service.GameSessionService;
+import com.boardgame.service.GameUserService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
 
 @Controller
 public class GameController {
 
     private final GameSessionService gameSessionService;
 
+    @Autowired
+    private GameUserService gameUserService;
+
     public GameController(GameSessionService gameSessionService) {
         this.gameSessionService = gameSessionService;
     }
+
+    @GetMapping("/")
+    public String home() {
+        return "home";
+    }
+    
 
     @GetMapping("/login")
     public String loginPage() {
@@ -51,15 +69,45 @@ public class GameController {
         User user = (User) authentication.getPrincipal();
         model.addAttribute("username", user.getUsername());
         model.addAttribute("role", user.getAuthorities().toString());
-        return "home";
+    
+        // Check if the user has the "ROLE_ADMIN" authority
+        if (authentication.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"))) {
+            return "redirect:/admin";  // Redirect to admin dashboard if the user is an admin
+        } else {
+            return "home";  // Regular home page for non-admin users
+        }
     }
-
+    
+    
+    
     @GetMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")  // Use hasAuthority instead of hasRole
     public String adminDashboard(Model model, Authentication authentication) {
+        // Admin-specific page
         User user = (User) authentication.getPrincipal();
         model.addAttribute("username", user.getUsername());
-        return "admin";
+        return "admin";  // Render admin page
+    }
+
+    // Endpoint to show the "Manage Users" page
+    @GetMapping("/admin/manage-users")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public String manageUsers(Model model, Authentication authentication) {
+        // Retrieve users from the database using the service
+        List<GameUser> users = gameUserService.getAllUsers();
+
+        // Add the list of users to the model
+        model.addAttribute("users", users);
+        return "manage-users";  // Return the 'manage-users' view
+    }
+
+    // Endpoint to delete a user
+    @GetMapping("/delete-user/{userId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public String deleteUser(@PathVariable Long userId) {
+        gameUserService.deleteUser(userId);
+        return "redirect:/admin/manage-users";  // Redirect to manage-users after deletion
     }
 
     @GetMapping("/setup")
@@ -90,66 +138,75 @@ public class GameController {
         return "gameSessionsPage"; // Ensure this matches the correct Thymeleaf template
     }
 
-    @GetMapping("/game-sessions/{sessionId}/play")
-    public String showGameSessionPage(@PathVariable Long sessionId, Model model) {
-        GameSession gameSession = gameSessionService.findById(sessionId);
-        if (gameSession == null) {
-            // Trigger the error page when the session is not found
-            throw new RuntimeException("Game session with ID " + sessionId + " not found.");
+    @Controller
+    @RequestMapping("/game-sessions")
+    public class GameSessionController {
+
+        private final GameSessionRepository gameSessionRepository;
+
+        public GameSessionController(GameSessionRepository gameSessionRepository) {
+            this.gameSessionRepository = gameSessionRepository;
+        }
+
+        @GetMapping("/play")
+        public String playGame(@RequestParam Long gameSessionId, Model model) {
+            Optional<GameSession> gameSession = gameSessionRepository.findById(gameSessionId);
+        
+            if (gameSession.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid game session ID");
+            }
+        
+            model.addAttribute("gameSession", gameSession.get());
+            return "play";
         }
         
-        model.addAttribute("gameSession", gameSession);
-        return "play";
-    }
-    
-    @GetMapping("/play/{sessionId}")
-    public String showPlayPage(@PathVariable Long sessionId, Model model) {
-        GameSession gameSession = gameSessionService.findById(sessionId);
-        if (gameSession == null) {
-            model.addAttribute("error", "Game session not found.");
-            return "error"; // You can customize error page if needed
-        }
-        model.addAttribute("gameSession", gameSession);
-        return "play";
     }
 
     @PostMapping("/game-sessions/{sessionId}/update-scores")
-    public String updateScores(@PathVariable Long sessionId, @RequestParam Map<String, String> scores, Model model) {
+    public String updateScores(@PathVariable Long sessionId, 
+                            @ModelAttribute GameSession gameSession, 
+                            Model model) {
         try {
-            GameSession gameSession = gameSessionService.findById(sessionId);
-            if (gameSession == null) {
+            // Fetch the game session by ID
+            GameSession gameSessionToUpdate = gameSessionService.getGameSessionById(sessionId);
+            
+            if (gameSessionToUpdate == null) {
                 model.addAttribute("error", "Game session not found.");
                 return "error";
             }
 
-            // Process the score updates
-            for (Map.Entry<String, String> entry : scores.entrySet()) {
-                try {
-                    Long playerId = Long.parseLong(entry.getKey());  // Parse player ID
-                    Integer score = Integer.parseInt(entry.getValue()); // Parse score
+            // Add the updated player scores (instead of replacing, we add to existing score)
+            if (gameSession.getPlayers() != null) {
+                for (Player updatedPlayer : gameSession.getPlayers()) {
+                    // Find the corresponding player in the current game session
+                    Optional<Player> existingPlayer = gameSessionToUpdate.getPlayers().stream()
+                            .filter(player -> player.getId().equals(updatedPlayer.getId()))
+                            .findFirst();
 
-                    // Find the player and update their score
-                    Player player = gameSessionService.getPlayerById(playerId);
-                    if (player != null && player.getGameSession().getId().equals(sessionId)) {
-                        player.setScore(score);
-                        gameSessionService.savePlayer(player);
+                    // If the player exists, add the new score to the existing score
+                    if (existingPlayer.isPresent()) {
+                        Player playerToUpdate = existingPlayer.get();
+                        playerToUpdate.setScore(playerToUpdate.getScore() + updatedPlayer.getScore());
+                    } else {
+                        // If the player is not found in the session, you can optionally handle this case
+                        // For example, you could add the player to the game session or ignore
+                        gameSessionToUpdate.addPlayer(updatedPlayer);
                     }
-                } catch (NumberFormatException e) {
-                    model.addAttribute("error", "Invalid score input for player ID: " + entry.getKey());
-                    return "error";
                 }
             }
 
-            // Instead of redirecting, re-render the "play" page with updated scores
-            model.addAttribute("gameSession", gameSession);
-            return "play"; // This will re-render the game session page with updated scores
+            // Save the updated game session
+            gameSessionService.saveGameSession(gameSessionToUpdate);
+
+            // Pass the updated game session to the model
+            model.addAttribute("gameSession", gameSessionToUpdate);
+            return "play"; // This will re-render the play page with updated scores
 
         } catch (Exception e) {
             model.addAttribute("error", "An error occurred while updating scores: " + e.getMessage());
-            return "error"; // Or any other error page
+            return "error";
         }
     }
-
 
     @PostMapping("/setup")
     public String submitGameSetup(@ModelAttribute GameSetupRequest gameSetupRequest, Model model) {
@@ -192,20 +249,53 @@ public class GameController {
     }
 
     @PostMapping("/game-sessions/{sessionId}/end")
-    public String endGameSession(@PathVariable Long sessionId) {
-        gameSessionService.endGameSession(sessionId);
-        return "redirect:/";
+    public String endGameSession(@PathVariable Long sessionId, Model model) {
+        try {
+            // Fetch the game session by ID
+            GameSession gameSessionToEnd = gameSessionService.getGameSessionById(sessionId);
+    
+            if (gameSessionToEnd == null) {
+                model.addAttribute("error", "Game session not found.");
+                return "error";
+            }
+    
+            // Mark the session as ended
+            gameSessionService.endGameSession(sessionId);
+    
+            // Optionally, add a success message
+            model.addAttribute("message", "Game session ended successfully!");
+    
+            // Redirect to a suitable page (home, game sessions list, etc.)
+            return "redirect:/";  // Redirect to home page or another appropriate page
+    
+        } catch (Exception e) {
+            model.addAttribute("error", "An error occurred while ending the game session: " + e.getMessage());
+            return "error";
+        }
     }
 
-    @ExceptionHandler(Exception.class)
-    public String handleError(Exception e, Model model) {
-        // Log the error if needed
-        e.printStackTrace();
+        private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-        // Set the error message for the view
-        model.addAttribute("errorMessage", "An error occurred: " + e.getMessage());
-
-        // Return the error page view
-        return "error";
+    // Endpoint to display the "Add User" form
+    @GetMapping("/adduser")
+    public String showAddUserForm(Model model) {
+        return "adduser";  // Return the adduser.html page
     }
+
+    // Endpoint to handle the form submission and save the new user
+    @PostMapping("/admin/save-user")
+    public String saveUser(@RequestParam String username, @RequestParam String password, @RequestParam String role) {
+        // Encrypt the password before saving
+        String encryptedPassword = passwordEncoder.encode(password);
+
+        // Create a new GameUser object
+        GameUser newUser = new GameUser(username, encryptedPassword, role);
+
+        // Save the user to the database
+        gameUserService.saveUser(newUser);
+
+        // Redirect to the manage-users page after saving the user
+        return "redirect:/admin/manage-users";
+    }
+    
 }

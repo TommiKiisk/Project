@@ -1,7 +1,5 @@
 package com.boardgame.config;
 
-import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,25 +32,27 @@ public class WebSecurityConfig {
     public SecurityFilterChain configure(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(antMatcher("/css/**")).permitAll()
-                .requestMatchers(antMatcher("/signup")).permitAll()
-                .requestMatchers(antMatcher("/saveuser")).permitAll()
+                .requestMatchers("/css/**").permitAll()
+                .requestMatchers("/signup").permitAll()
+                .requestMatchers("/saveuser").permitAll()
+                .requestMatchers("/admin").hasRole("ADMIN")
+                .requestMatchers("/adduser").hasRole("ADMIN")
                 .anyRequest().authenticated()  // Require authentication for any other request
-            )
-            .headers(headers -> headers
-                .frameOptions(frameOptions -> frameOptions.disable())  // Disable for H2 console
             )
             .formLogin(formLogin -> formLogin
                 .loginPage("/login")  // Custom login page
-                .defaultSuccessUrl("/home", true)  // Redirect to student list after successful login
+                .defaultSuccessUrl("/home", true)  // Redirect to /home after login
                 .permitAll()  // Allow everyone to access the login page
             )
             .logout(logout -> logout
                 .permitAll()  // Allow everyone to log out
             );
-
+    
         return http.build();
     }
+    
+    
+    
 
     // Manually configure DaoAuthenticationProvider
     @Bean

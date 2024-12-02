@@ -12,12 +12,12 @@
             <div class="col-md-8">
                 <h1 class="text-center">Admin Dashboard</h1>
                 <div class="mt-4">
-                    <p>Welcome, <span th:text="${username}"></span>! You have admin privileges.</p>
+                    <p>Welcome, <span th:text="${username}">Admin</span>! You have admin privileges.</p>
                 </div>
                 <div class="mt-4">
                     <a href="/admin/manage-users" class="btn btn-warning">Manage Users</a>
-                    <a href="/admin/game-settings" class="btn btn-primary">Game Settings</a>
-                    <a href="/login" class="btn btn-danger">Logout</a>
+                    <!-- <a href="/admin/game-settings" class="btn btn-primary">Game Settings</a> -->
+                    <a href="/logout" class="btn btn-danger">Logout</a>
                 </div>
             </div>
         </div>

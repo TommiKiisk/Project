@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.boardgame.model.GameSession;
 import com.boardgame.model.Player;
@@ -59,18 +61,6 @@ public class GameSessionService {
         // Save the updated session and return the updated players
         gameSessionRepository.save(session);
         return session.getPlayers();
-    }
-
-    /**
-     * Marks a game session as ended.
-     */
-    public GameSession endGameSession(Long sessionId) {
-        GameSession session = gameSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Game session not found with ID: " + sessionId));
-
-        session.setEnded(true);
-
-        return gameSessionRepository.save(session);
     }
 
     /**
@@ -144,11 +134,6 @@ public class GameSessionService {
         gameSessionRepository.save(newGameSession);
     }
 
-    public GameSession findById(Long sessionId) {
-        return gameSessionRepository.findById(sessionId)
-            .orElseThrow(() -> new IllegalArgumentException("Game session not found with ID: " + sessionId));
-    }
-
     public void deleteGameSession(Long id) {
         // Check if the game session exists before deleting
         GameSession gameSession = gameSessionRepository.findById(id).orElseThrow(() -> new RuntimeException("Game session not found"));
@@ -156,5 +141,36 @@ public class GameSessionService {
         // Delete the game session
         gameSessionRepository.delete(gameSession);
     }
+
+    public GameSession updateScores(Long sessionId, List<Player> players) {
+        Optional<GameSession> optionalGameSession = gameSessionRepository.findById(sessionId);
+        if (optionalGameSession.isPresent()) {
+            GameSession gameSession = optionalGameSession.get();
+            // Update each player's score
+            for (Player player : players) {
+                // Assuming player IDs and scores are already set from form submission
+                Player existingPlayer = gameSession.getPlayerById(player.getId());
+                if (existingPlayer != null) {
+                    existingPlayer.setScore(player.getScore());
+                }
+            }
+            // Save the updated game session
+            return gameSessionRepository.save(gameSession);
+        }
+        return null;
+    }
+
+    public void endGameSession(Long sessionId) {
+        Optional<GameSession> gameSessionOptional = gameSessionRepository.findById(sessionId);
+        if (gameSessionOptional.isPresent()) {
+            GameSession gameSession = gameSessionOptional.get();
+            // Assuming the GameSession has a 'status' field that tracks its state
+            gameSession.setEnded(true);  // Example: Update the status to "ENDED"
+            gameSessionRepository.save(gameSession);  // Save the updated session
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game session not found");
+        }
+    }
+
     
 }
