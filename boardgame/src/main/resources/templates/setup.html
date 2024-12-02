@@ -24,8 +24,8 @@
             const newRule = document.createElement("div");
             newRule.classList.add("ruleRow");
             newRule.innerHTML = `
-                <input type="text" name="rules" placeholder="Rule Name" required />
-                <input type="number" name="points" placeholder="Points" required />
+                <input type="text" name="rules[0].name" placeholder="Rule Name" required />
+                <input type="number" name="rules[0].points" placeholder="Points" required />
                 <button type="button" onclick="removeRule(this)">Remove</button>
             `;
             ruleList.appendChild(newRule);
@@ -46,31 +46,41 @@
 
     <h3>Players</h3>
     <div id="playerList">
+        <!-- Add a placeholder for the first player, but let the JavaScript handle additional ones -->
         <div class="playerRow">
             <input type="text" name="players" placeholder="Player Name" required />
+            <button type="button" onclick="addPlayer()">Add Player</button>
             <button type="button" onclick="removePlayer(this)">Remove</button>
         </div>
     </div>
-    <button type="button" onclick="addPlayer()">Add Player</button>
 
     <h3>Rules</h3>
     <div id="ruleList">
+        <!-- Add a placeholder for the first rule, but let the JavaScript handle additional ones -->
         <div class="ruleRow">
-            <input type="text" name="rules" placeholder="Rule Name" required />
-            <input type="number" name="points" placeholder="Points" required />
+            <input type="text" name="rules[0].name" placeholder="Rule Name" required />
+            <input type="number" name="rules[0].points" placeholder="Points" required />
+            <button type="button" onclick="addRule()">Add Rule</button>
             <button type="button" onclick="removeRule(this)">Remove</button>
         </div>
     </div>
-    <button type="button" onclick="addRule()">Add Rule</button>
 
     <br><br>
     <button type="submit">Submit Game Setup</button>
 </form>
 
-<div th:if="${gameSetupRequest != null}">
-    <br>
-    <a href="/play" class="playButton">Start Game</a>
-</div>
+<h3>Existing Game Sessions</h3>
+<form th:action="@{/play}" method="get">
+    <label for="gameSessionSelect">Choose an Existing Game Session:</label>
+    <select id="gameSessionSelect" name="gameSessionId" required>
+        <option value="">--Select a Game Session--</option>
+        <!-- Ensure gameSessions is passed correctly and not null -->
+        <th:block th:each="gameSession : ${gameSessions}">
+            <option th:value="${gameSession.id}" th:text="${gameSession.gameName}"></option>
+        </th:block>
+    </select>
+    <button type="submit">Start Game</button>
+</form>
 
 </body>
 </html>

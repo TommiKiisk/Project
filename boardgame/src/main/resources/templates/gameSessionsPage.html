@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Game Sessions</title>
+</head>
+<body>
+
+<h1>Game Sessions</h1>
+
+<!-- Check if there are any game sessions -->
+<div th:if="${gameSessions != null and gameSessions.size() > 0}">
+    <h3>Existing Game Sessions</h3>
+
+    <!-- Loop through each game session and display its details -->
+    <table>
+        <thead>
+            <tr>
+                <th>Game Name</th>
+                <th>Start Time</th>
+                <th>Active</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <th:block th:each="gameSession : ${gameSessions}">
+                <tr>
+                    <td th:text="${gameSession.gameName}"></td>
+                    <td th:text="${#temporals.format(gameSession.startTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                    <td th:text="${gameSession.active ? 'Yes' : 'No'}"></td>
+                    <td>
+                        <!-- Link to start the game if it's active -->
+                        <form th:action="@{/play}" method="get">
+                            <input type="hidden" th:value="${gameSession.id}" name="gameSessionId"/>
+                            <button type="submit">Start Game</button>
+                        </form>
+
+                        <!-- Form to delete the game session -->
+                        <form th:action="@{/game-sessions/{id}/delete(id=${gameSession.id})}" method="post">
+                            <button type="submit">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            </th:block>
+        </tbody>
+    </table>
+</div>
+
+<!-- If no game sessions exist, show a message -->
+<div th:if="${gameSessions == null or gameSessions.size() == 0}">
+    <p>No active game sessions found.</p>
+</div>
+
+</body>
+</html>

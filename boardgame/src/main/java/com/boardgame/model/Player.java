@@ -1,32 +1,43 @@
 package com.boardgame.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import java.util.Objects;
+
+import jakarta.persistence.*;
 
 @Entity
 public class Player {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "player_id", nullable = false, updatable = false)
     private Long id;
 
+    @Column(name = "name", nullable = false) // Ensure the name is non-null in the database
     private String name;
-    private int points = 0;
 
-    private int turnCount = 0; // For tracking turns taken
+    @Column(name = "score", nullable = false) // Renamed from 'points' to 'score'
+    private int score = 0;
 
-    // Assuming a Player belongs to a GameSession
-    @ManyToOne // Establishing a relationship to GameSession
-    private GameSession gameSession; 
+    @Column(name = "turn_count", nullable = false) // Track the number of turns taken
+    private int turnCount = 0;
 
-    // Getters and Setters
-    public void addPoints(int pointsToAdd) {
-        this.points += pointsToAdd;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "game_session_id")
+    private GameSession gameSession;
+
+    // Constructors
+    public Player() {
+        // Default constructor for JPA
     }
 
+    public Player(String name, GameSession gameSession) {
+        this.name = name;
+        this.score = 0;
+        this.turnCount = 0;
+        this.gameSession = gameSession;
+    }
+
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -43,12 +54,12 @@ public class Player {
         this.name = name;
     }
 
-    public int getPoints() {
-        return points;
+    public int getScore() {
+        return score;
     }
 
-    public void setPoints(int points) {
-        this.points = points;
+    public void setScore(int score) {
+        this.score = score;
     }
 
     public int getTurnCount() {
@@ -60,10 +71,47 @@ public class Player {
     }
 
     public GameSession getGameSession() {
-        return gameSession;  // Return the associated game session
+        return gameSession;
     }
 
     public void setGameSession(GameSession gameSession) {
-        this.gameSession = gameSession;  // Set the associated game session
+        this.gameSession = gameSession;
+    }
+
+    // Helper Methods
+    public void addScore(int scoreToAdd) {
+        this.score += scoreToAdd;
+    }
+
+    public void resetScore() {
+        this.score = 0;
+    }
+
+    public void incrementTurnCount() {
+        this.turnCount++;
+    }
+
+    // toString, equals, hashCode
+    @Override
+    public String toString() {
+        return "Player{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", score=" + score +
+                ", turnCount=" + turnCount +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Player player = (Player) o;
+        return id != null && id.equals(player.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

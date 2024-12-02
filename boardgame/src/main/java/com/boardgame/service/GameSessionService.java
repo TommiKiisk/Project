@@ -12,6 +12,8 @@ import com.boardgame.model.Player;
 import com.boardgame.repository.GameSessionRepository;
 import com.boardgame.repository.PlayerRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class GameSessionService {
 
@@ -21,19 +23,24 @@ public class GameSessionService {
     @Autowired
     private PlayerRepository playerRepository;
 
+    public GameSessionService(GameSessionRepository gameSessionRepository) {
+        this.gameSessionRepository = gameSessionRepository;
+    }
+
     /**
      * Creates a new game session with the provided game name and players.
      */
+
+
     public GameSession createGameSession(String gameName, List<Player> players) {
         GameSession session = new GameSession();
         session.setGameName(gameName);
-
-        // Persist players before associating them with the session
-        players.forEach(playerRepository::save);
-        session.setPlayers(players);
-
+        session.setPlayers(players.stream()
+            .peek(player -> player.setScore(0)) // Initialize points to 0
+            .toList());
         return gameSessionRepository.save(session);
     }
+    
 
     /**
      * Updates the points of a specific player in a session.
@@ -47,7 +54,7 @@ public class GameSessionService {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Player not found with ID: " + playerId));
 
-        player.setPoints(points);
+        player.setScore(points);
 
         // Save the updated session and return the updated players
         gameSessionRepository.save(session);
@@ -115,4 +122,39 @@ public class GameSessionService {
             return newGameSession;
         }
     }
+
+    public void updatePlayerScore(Long playerId, Integer score) {
+        Player player = playerRepository.findById(playerId)
+            .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerId));
+        player.setScore(score);
+        playerRepository.save(player);
+    }
+
+
+    @Transactional
+    public List<GameSession> getAllGameSessions() {
+        List<GameSession> gameSessions = gameSessionRepository.findAll();
+        // Force initialization of players
+        gameSessions.forEach(session -> session.getPlayers().size());
+        return gameSessions;
+    }
+    
+
+    public void saveGameSession(GameSession newGameSession) {
+        gameSessionRepository.save(newGameSession);
+    }
+
+    public GameSession findById(Long sessionId) {
+        return gameSessionRepository.findById(sessionId)
+            .orElseThrow(() -> new IllegalArgumentException("Game session not found with ID: " + sessionId));
+    }
+
+    public void deleteGameSession(Long id) {
+        // Check if the game session exists before deleting
+        GameSession gameSession = gameSessionRepository.findById(id).orElseThrow(() -> new RuntimeException("Game session not found"));
+        
+        // Delete the game session
+        gameSessionRepository.delete(gameSession);
+    }
+    
 }

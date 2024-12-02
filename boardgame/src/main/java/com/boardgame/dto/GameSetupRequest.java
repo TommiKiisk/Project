@@ -1,15 +1,17 @@
 package com.boardgame.dto;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import com.boardgame.model.Rule;
 
 public class GameSetupRequest {
 
-    private String gameName; // Game name
-    private List<String> players;  // List of player names
-    private List<String> rules;    // List of rule strings (e.g., "town:3", "city:5")
+    private String gameName;
+    private List<String> players = new ArrayList<>();
+    private List<Rule> rules = new ArrayList<>();
 
-    // Getters and Setters
-
+    // Getters and Setters for gameName, players, and rules
     public String getGameName() {
         return gameName;
     }
@@ -26,11 +28,11 @@ public class GameSetupRequest {
         this.players = players;
     }
 
-    public List<String> getRules() {
+    public List<Rule> getRules() {
         return rules;
     }
 
-    public void setRules(List<String> rules) {
+    public void setRules(List<Rule> rules) {
         this.rules = rules;
     }
 }

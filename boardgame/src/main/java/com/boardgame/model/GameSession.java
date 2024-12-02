@@ -1,12 +1,15 @@
 package com.boardgame.model;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -22,8 +25,11 @@ public class GameSession {
 
     private boolean active; // Add this field for the active status of the game session
 
-    @OneToMany
-    private List<Player> players;
+    @OneToMany(mappedBy = "gameSession", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Player> players = new ArrayList<>();
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Rule> rules = new ArrayList<>();
 
     private boolean ended;
 
@@ -74,5 +80,18 @@ public class GameSession {
 
     public void setEnded(boolean ended) {
         this.ended = ended;
+    }
+
+    public void addPlayer(Player player) {
+        if (player != null) {
+            this.players.add(player);
+        }
+    }
+
+    // Method to add a rule to the game session
+    public void addRule(Rule rule) {
+        if (rule != null) {
+            this.rules.add(rule);
+        }
     }
 }
